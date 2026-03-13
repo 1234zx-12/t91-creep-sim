@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>高温蠕变虚拟实验 · 温度对蠕变速率的影响</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: #0a1420;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        /* 主容器：缩小到原来的80% */
+        .container {
+            width: 1120px;
+            max-width: 100%;
+            height: 640px;
+            background: linear-gradient(165deg, #112438 0%, #1a3048 100%);
+            border-radius: 32px;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.8), 0 0 0 2px #2e5f88 inset;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #3d82b0;
+        }
+
+        /* 标题区 */
+        .title-area {
+            text-align: center;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .title-area h1 {
+            font-size: 26px;
+            color: #d4f0ff;
+            text-shadow: 0 0 8px #3aa8ff;
+            letter-spacing: 1.6px;
+        }
+        .title-area h1 span {
+            color: #ffb95c;
+            font-weight: 700;
+        }
+        .sub-title {
+            color: #8bb4d4;
+            font-size: 13px;
+            border-bottom: 1px dashed #2d6d97;
+            padding-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        /* 左右主区域：flex横排 */
+        .main-row {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            min-height: 0;
+            height: 100%;
+        }
+
+        /* 左侧：金属棒动画区 */
+        .left-col {
+            flex: 1;
+            background: #0e2536;
+            border-radius: 24px;
+            padding: 16px 12px;
+            box-shadow: inset 0 2px 8px #00000077, 0 0 0 1px #2d7bb0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .left-col h3 {
+            color: #b8dcff;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-left: 8px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .canvas-box {
+            flex: 1;
+            background: #0e1f2c;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 16px #173e55 inset;
+            min-height: 0;
+            padding: 8px;
+        }
+        canvas#specimenCanvas {
+            width: 100%;
+            height: 100%;
+            max-height: 280px;
+            border-radius: 20px;
+            background: #102633;
+        }
+
+        /* 寿命显示 */
+        .life-display-box {
+            background: #0e3145;
+            border-radius: 32px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            border: 1px solid #3590c0;
+            box-shadow: 0 0 16px #0066cc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .life-label {
+            font-size: 14px;
+            color: #bcddff;
+        }
+        .life-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffdb9c;
+            text-shadow: 0 0 8px #ffa500;
+        }
+        .life-unit {
+            font-size: 13px;
+            color: #7cb5f0;
+            margin-left: 4px;
+        }
+
+        /* 右侧：曲线+数据+控制 */
+        .right-col {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 0;
+            height: 100%;
+        }
+
+        /* 曲线区 */
+        .curve-box {
+            background: #0e2536;
+            border-radius: 24px;
+            padding: 12px;
+            box-shadow: inset 0 2px 6px #00000066, 0 0 0 1px #2d7bb0;
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+        }
+        .curve-box h3 {
+            color: #b8dcff;
+            font-size: 14px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .curve-canvas-box {
+            flex: 1;
+            background: #0e1f2c;
+            border-radius: 16px;
+            padding: 4px;
+            min-height: 0;
+        }
+        canvas#curveCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 13px;
+            background: #112634;
+        }
+
+        /* 数据控制区 */
+        .control-box {
+            background: #0e2536;
+            border-radius: 24px;
+            padding: 14px 16px;
+            box-shadow: inset 0 2px 6px #00000077, 0 0 0 1px #2d7bb0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* 温度-寿命卡片网格 - 改为5列 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .temp-card {
+            background: #153e57;
+            border-radius: 24px;
+            padding: 6px 2px;
+            text-align: center;
+            border: 1px solid #3280b0;
+            box-shadow: 0 2px 0 #0d3f5a;
+        }
+        .temp-card .temp-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffbe6e;
+        }
+        .temp-card .life-value {
+            font-size: 11px;
+            color: #cde4ff;
+            font-weight: 500;
+        }
+        .temp-card .life-unit {
+            font-size: 8px;
+            color: #8bb0cc;
+        }
+
+        /* 滑块行 */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+            flex-wrap: wrap;
+        }
+        .slider-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffbe6e;
+            min-width: 56px;
+        }
+        input[type=range] {
+            flex: 3;
+            height: 10px;
+            background: linear-gradient(90deg, #1c6996, #fcb45e);
+            border-radius: 24px;
+            -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #f90;
+            box-shadow: 0 0 12px #ffd966;
+            cursor: pointer;
+        }
+        .temp-show {
+            font-size: 21px;
+            font-weight: 700;
+            color: #fff6d9;
+            background: #1b4a69;
+            padding: 5px 16px;
+            border-radius: 40px;
+            border: 1px solid #ffbe6e;
+            min-width: 96px;
+            text-align: center;
+        }
+
+        /* 按钮组 */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+        .btn {
+            background: #1c6996;
+            border: none;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 8px 0;
+            border-radius: 48px;
+            box-shadow: 0 6px 0 #0d3b57, 0 3px 12px #3db4ff;
+            cursor: pointer;
+            transition: 0.08s linear;
+            flex: 1;
+            text-align: center;
+            border: 1px solid #8bcbff;
+        }
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #0d3b57;
+        }
+        .btn.reset {
+            background: #4f6072;
+            box-shadow: 0 6px 0 #334454;
+        }
+
+        .footer-note {
+            text-align: center;
+            color: #619cc2;
+            font-size: 12px;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        /* LM公式弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 15, 28, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #102c45;
+            border: 2px solid #2f86d6;
+            border-radius: 38px;
+            padding: 32px 40px;
+            max-width: 400px;
+            box-shadow: 0 0 48px #0080ff;
+            color: #e3f0ff;
+            position: relative;
+        }
+        .modal-content h2 {
+            color: #a8d4ff;
+            margin-bottom: 16px;
+            font-size: 1.6rem;
+            border-bottom: 2px solid #397ec2;
+            padding-bottom: 8px;
+        }
+        .modal-content p {
+            font-size: 1rem;
+            margin: 12px 0;
+        }
+        .modal-content .formula {
+            font-family: 'Courier New', monospace;
+            background: #021b30;
+            padding: 12px 16px;
+            border-radius: 24px;
+            font-size: 1.3rem;
+            text-align: center;
+            border: 1px solid #0099ff;
+            color: #7fc9ff;
+        }
+        .close-modal {
+            background: #17548b;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            padding: 8px 32px;
+            border-radius: 32px;
+            margin-top: 20px;
+            cursor: pointer;
+            border: 1px solid #4ea6ff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title-area">
+        <h1>⚡ 高温蠕变虚拟实验 · <span>温度对蠕变速率的影响</span></h1>
+        <div class="sub-title">C=20 | 应力100 MPa · 动画加速</div>
+    </div>
+
+    <div class="main-row">
+        <!-- 左侧金属棒 -->
+        <div class="left-col">
+            <h3>🧪 试样状态 <span style="font-size:11px; color:#ffbe6e;" id="barStatus">(完整)</span></h3>
+            <div class="canvas-box">
+                <canvas id="specimenCanvas" width="280" height="240"></canvas>
+            </div>
+            <!-- 寿命显示 -->
+            <div class="life-display-box">
+                <span class="life-label">⏱️ 预测断裂时间</span>
+                <span><span class="life-value" id="ruptureTimeDisplay">98,765.43</span><span class="life-unit">小时</span></span>
+            </div>
+        </div>
+
+        <!-- 右侧 -->
+        <div class="right-col">
+            <!-- 曲线图 -->
+            <div class="curve-box">
+                <h3>📊 应变-时间曲线 (蓝色动态绘制)</h3>
+                <div class="curve-canvas-box">
+                    <canvas id="curveCanvas" width="480" height="160"></canvas>
+                </div>
+            </div>
+            <!-- 控制面板 -->
+            <div class="control-box">
+                <!-- 温度-寿命卡片 (5个关键温度) -->
+                <div class="card-grid">
+                    <div class="temp-card"><div class="temp-value">400℃</div><div class="life-value" id="card400">98万</div><div class="life-unit">小时</div></div>
+                    <div class="temp-card"><div class="temp-value">500℃</div><div class="life-value" id="card500">10万</div><div class="life-unit">小时</div></div>
+                    <div class="temp-card"><div class="temp-value">600℃</div><div class="life-value" id="card600">9,876</div><div class="life-unit">小时</div></div>
+                    <div class="temp-card"><div class="temp-value">700℃</div><div class="life-value" id="card700">1,234</div><div class="life-unit">小时</div></div>
+                    <div class="temp-card"><div class="temp-value">800℃</div><div class="life-value" id="card800">189</div><div class="life-unit">小时</div></div>
+                </div>
+
+                <!-- 滑块区 - 范围改为400-800 -->
+                <div class="slider-row">
+                    <span class="slider-label">🌡️ 温度</span>
+                    <input type="range" id="tempSlider" min="400" max="800" value="600" step="1">
+                    <span class="temp-show" id="tempDisplay">600℃</span>
+                </div>
+
+                <!-- 控制按钮 -->
+                <div class="btn-group">
+                    <button class="btn" id="startBtn">▶ 开始模拟</button>
+                    <button class="btn reset" id="resetBtn">↺ 重置</button>
+                    <button class="btn" id="formulaBtn">📘 LM公式</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部说明 -->
+    <div class="footer-note">
+        📌 温度越高，寿命越短
+    </div>
+</div>
+
+<!-- LM公式弹窗 -->
+<div class="modal-overlay" id="formulaModal">
+    <div class="modal-content">
+        <h2>⚙️ Larson-Miller 参数</h2>
+        <p>公式： LM = T (C + log₁₀ t) / 1000</p>
+        <div class="formula">P = T (20 + log t)</div>
+        <p>给定应力 σ = 100 MPa<br>材料常数 C = 20<br>LM_P = 19.33 (针对T91钢)</p>
+        <p style="font-size:0.9rem; background:#0e3752; padding:6px; border-radius:19px;">t = 10^ ( (LM_P × 1000)/T - C )</p>
+        <button class="close-modal" id="closeModalBtn">明白</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ========== Larson-Miller 公式参数 ==========
+        const C = 20;               // Larson-Miller 常数
+        const LM_P = 19.33;          // 针对T91钢的校准参数
+        
+        // 根据 T(°C) 计算断裂时间 t (小时)
+        function computeRuptureTime(Tc) {
+            const Tk = Tc + 273.15;
+            const log_t = (LM_P * 1000) / Tk - C;
+            const t = Math.pow(10, log_t);
+            
+            // 确保最小值为0.05小时（3分钟）
+            return Math.max(t, 0.05);
+        }
+
+        // 格式化寿命显示
+        function formatLife(life) {
+            if (life >= 100000) {
+                return (life / 10000).toFixed(1) + '万';
+            } else if (life >= 10000) {
+                return (life / 1000).toFixed(1) + '万';
+            } else if (life >= 1000) {
+                return Math.round(life).toLocaleString();
+            } else if (life >= 100) {
+                return life.toFixed(1);
+            } else if (life >= 10) {
+                return life.toFixed(1);
+            } else if (life >= 1) {
+                return life.toFixed(2);
+            } else {
+                // 小于1小时，显示分钟
+                return (life * 60).toFixed(1) + '分';
+            }
+        }
+
+        // 格式化时间轴数值
+        function formatTimeAxis(value) {
+            if (value >= 100000) {
+                return (value / 10000).toFixed(0) + '万';
+            } else if (value >= 10000) {
+                return (value / 1000).toFixed(1) + '万';
+            } else if (value >= 1000) {
+                return (value / 1000).toFixed(1) + 'k';
+            } else if (value >= 100) {
+                return Math.round(value).toString();
+            } else if (value >= 10) {
+                return value.toFixed(1);
+            } else if (value >= 1) {
+                return value.toFixed(1);
+            } else {
+                // 小于1小时，显示分钟
+                return (value * 60).toFixed(0) + 'm';
+            }
+        }
+
+        // 获取动画演示时长
+        function getAnimDuration(temp) {
+            if (temp <= 400) return 8.0;
+            if (temp <= 500) return 6.5;
+            if (temp <= 600) return 5.0;
+            if (temp <= 700) return 3.5;
+            if (temp <= 800) return 2.5;
+            return 2.0;
+        }
+
+        // 获取canvas元素
+        const canvasSpec = document.getElementById('specimenCanvas');
+        const ctxSpec = canvasSpec.getContext('2d');
+        const canvasCurve = document.getElementById('curveCanvas');
+        const ctxCurve = canvasCurve.getContext('2d');
+        const tempSlider = document.getElementById('tempSlider');
+        const tempDisplay = document.getElementById('tempDisplay');
+        const ruptureDisplay = document.getElementById('ruptureTimeDisplay');
+        const barStatus = document.getElementById('barStatus');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const formulaBtn = document.getElementById('formulaBtn');
+        const modal = document.getElementById('formulaModal');
+        const closeModal = document.getElementById('closeModalBtn');
+
+        // 卡片元素
+        const card400 = document.getElementById('card400');
+        const card500 = document.getElementById('card500');
+        const card600 = document.getElementById('card600');
+        const card700 = document.getElementById('card700');
+        const card800 = document.getElementById('card800');
+
+        // 状态变量
+        let currentTemp = 600;
+        let animProgress = 0.0;
+        let animActive = false;
+        let animStartTime = null;
+        let animDuration = getAnimDuration(600);
+        let rafId = null;
+
+        // 更新卡片上的寿命值
+        function updateCards() {
+            const temps = [400, 500, 600, 700, 800];
+            const cards = [card400, card500, card600, card700, card800];
+            
+            for (let i = 0; i < temps.length; i++) {
+                const life = computeRuptureTime(temps[i]);
+                cards[i].innerText = formatLife(life);
+            }
+        }
+
+        // 更新UI
+        function refreshUI() {
+            tempDisplay.innerText = currentTemp + '℃';
+            const life = computeRuptureTime(currentTemp);
+            
+            // 根据寿命大小决定显示格式
+            if (life >= 1) {
+                ruptureDisplay.innerText = life.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' 小时';
+            } else {
+                ruptureDisplay.innerText = (life * 60).toFixed(1) + ' 分钟';
+            }
+            
+            animDuration = getAnimDuration(currentTemp);
+        }
+
+        // 绘制金属棒
+        function drawSpecimen(progress) {
+            ctxSpec.clearRect(0, 0, canvasSpec.width, canvasSpec.height);
+            const w = canvasSpec.width, h = canvasSpec.height;
+            const cx = w/2;
+            
+            const rodTopY = h * 0.15;
+            const rodBottomY = h * 0.85;
+            const rodHeight = rodBottomY - rodTopY;
+            const baseWidth = 56;
+            const maxNeck = 0.35;
+            const neckCenter = rodTopY + rodHeight * 0.5;
+
+            const grad = ctxSpec.createLinearGradient(cx-24, rodTopY, cx+24, rodBottomY);
+            grad.addColorStop(0, '#c0d8f0');
+            grad.addColorStop(0.5, '#9cb8d0');
+            grad.addColorStop(1, '#6f8fa8');
+            ctxSpec.fillStyle = grad;
+            ctxSpec.shadowColor = '#3ab4ff';
+            ctxSpec.shadowBlur = 13;
+
+            if (progress < 0.01) {
+                barStatus.innerText = '(完整)';
+            } else if (progress < 0.3) {
+                barStatus.innerText = '(轻微颈缩)';
+            } else if (progress < 0.6) {
+                barStatus.innerText = '(明显颈缩)';
+            } else if (progress < 0.95) {
+                barStatus.innerText = '(接近断裂)';
+            } else {
+                barStatus.innerText = '(断裂)';
+            }
+
+            if (progress >= 0.99) {
+                const breakPos = rodTopY + rodHeight * 0.55;
+                const separation = 12;
+                
+                ctxSpec.fillStyle = grad;
+                ctxSpec.beginPath();
+                ctxSpec.rect(cx - baseWidth/2, rodTopY, baseWidth, breakPos - rodTopY - 4);
+                ctxSpec.fill();
+                
+                ctxSpec.fillStyle = grad;
+                ctxSpec.beginPath();
+                ctxSpec.rect(cx - baseWidth/2, breakPos + 4 + separation, baseWidth, rodBottomY - breakPos - 4);
+                ctxSpec.fill();
+                
+                ctxSpec.fillStyle = '#ffaa55';
+                ctxSpec.globalAlpha = 0.4;
+                ctxSpec.fillRect(cx - baseWidth/2 - 2, breakPos - 2, 6, 2);
+                ctxSpec.fillRect(cx + baseWidth/2 - 4, breakPos - 4, 6, 2);
+                ctxSpec.fillRect(cx - baseWidth/2 + 4, breakPos + separation + 2, 6, 2);
+                ctxSpec.fillRect(cx + baseWidth/2 - 6, breakPos + separation, 6, 2);
+                ctxSpec.globalAlpha = 1.0;
+            } else {
+                for (let y = rodTopY; y <= rodBottomY; y += 3) {
+                    let distToCenter = Math.abs(y - neckCenter);
+                    let normalized = Math.min(1, distToCenter / (rodHeight * 0.4));
+                    let neckFactor = 1 - progress * (1 - maxNeck) * (1 - normalized * 0.8);
+                    let w = baseWidth * Math.max(maxNeck, neckFactor);
+                    let x = (canvasSpec.width - w) / 2;
+                    ctxSpec.fillRect(x, y-2, w, 4);
+                }
+                
+                ctxSpec.strokeStyle = '#e0f0ff';
+                ctxSpec.lineWidth = 1.2;
+                ctxSpec.beginPath();
+                ctxSpec.moveTo(cx - baseWidth/2, rodTopY);
+                ctxSpec.lineTo(cx - baseWidth/2, rodBottomY);
+                ctxSpec.stroke();
+                ctxSpec.beginPath();
+                ctxSpec.moveTo(cx + baseWidth/2, rodTopY);
+                ctxSpec.lineTo(cx + baseWidth/2, rodBottomY);
+                ctxSpec.stroke();
+            }
+
+            ctxSpec.fillStyle = '#4576b5';
+            ctxSpec.shadowBlur = 10;
+            ctxSpec.beginPath();
+            ctxSpec.ellipse(cx, rodTopY-2, baseWidth/2, 6, 0, 0, 2*Math.PI);
+            ctxSpec.fill();
+            ctxSpec.fillStyle = '#1b4670';
+            ctxSpec.beginPath();
+            ctxSpec.ellipse(cx, rodBottomY+2, baseWidth/2, 6, 0, 0, 2*Math.PI);
+            ctxSpec.fill();
+
+            ctxSpec.shadowBlur = 0;
+        }
+
+        // 绘制应变曲线
+        function drawCurve(progress) {
+            ctxCurve.clearRect(0, 0, canvasCurve.width, canvasCurve.height);
+            const w = canvasCurve.width, h = canvasCurve.height;
+            const marginL = 48, marginR = 40, marginT = 20, marginB = 32;
+            const graphW = w - marginL - marginR;
+            const graphH = h - marginT - marginB;
+
+            const ruptureTime = computeRuptureTime(currentTemp);
+            
+            ctxCurve.strokeStyle = '#2a4d77';
+            ctxCurve.lineWidth = 0.6;
+            
+            for (let i=0; i<=5; i++) {
+                let x = marginL + (i/5)*graphW;
+                ctxCurve.beginPath();
+                ctxCurve.moveTo(x, marginT);
+                ctxCurve.lineTo(x, h - marginB);
+                ctxCurve.strokeStyle = '#2a4d77';
+                ctxCurve.stroke();
+                
+                ctxCurve.fillStyle = '#8bb0cc';
+                ctxCurve.font = '8px "Microsoft YaHei"';
+                let timeValue = (i/5) * ruptureTime;
+                let timeText = formatTimeAxis(timeValue);
+                ctxCurve.fillText(timeText, x - 12, h - marginB + 12);
+            }
+            
+            for (let i=0; i<=4; i++) {
+                let y = marginT + (i/4)*graphH;
+                ctxCurve.beginPath();
+                ctxCurve.moveTo(marginL, y);
+                ctxCurve.lineTo(w - marginR, y);
+                ctxCurve.strokeStyle = '#2a4d77';
+                ctxCurve.stroke();
+                
+                let strainValue = 0.045 * (1 - i/4);
+                ctxCurve.fillStyle = '#8bb0cc';
+                ctxCurve.font = '8px "Microsoft YaHei"';
+                ctxCurve.fillText(strainValue.toFixed(3), marginL - 28, y + 3);
+            }
+
+            ctxCurve.strokeStyle = '#8bbfff';
+            ctxCurve.lineWidth = 1.6;
+            ctxCurve.beginPath();
+            ctxCurve.moveTo(marginL, marginT);
+            ctxCurve.lineTo(marginL, h - marginB);
+            ctxCurve.lineTo(w - marginR, h - marginB);
+            ctxCurve.stroke();
+
+            ctxCurve.fillStyle = '#b0d0ff';
+            ctxCurve.font = '10px "Microsoft YaHei"';
+            ctxCurve.fillText('时间 (小时)', w - 64, h - 4);
+            ctxCurve.fillText('应变', 12, marginT + 8);
+
+            ctxCurve.setLineDash([5, 3]);
+            ctxCurve.strokeStyle = '#ff6666';
+            ctxCurve.lineWidth = 1.6;
+            ctxCurve.beginPath();
+            let thresholdY = h - marginB - (0.04 * graphH / 0.045);
+            thresholdY = Math.max(marginT, Math.min(h - marginB, thresholdY));
+            ctxCurve.moveTo(marginL, thresholdY);
+            ctxCurve.lineTo(w - marginR, thresholdY);
+            ctxCurve.stroke();
+            ctxCurve.setLineDash([]);
+            ctxCurve.fillStyle = '#ff9999';
+            ctxCurve.font = '8px "Microsoft YaHei"';
+            ctxCurve.fillText('断裂阈值', marginL + graphW - 64, thresholdY - 4);
+
+            ctxCurve.strokeStyle = '#00aaff';
+            ctxCurve.lineWidth = 2.8;
+            ctxCurve.shadowBlur = 10;
+            ctxCurve.shadowColor = '#0088ff';
+            ctxCurve.beginPath();
+
+            let isFirstPoint = true;
+            for (let step = 0; step <= 100; step++) {
+                let t = step / 100;
+                if (t > progress) break;
+                
+                let strain;
+                if (t < 0.2) {
+                    strain = 0.002 + 0.003 * (t / 0.2);
+                } else if (t < 0.7) {
+                    strain = 0.005 + 0.015 * ((t - 0.2) / 0.5);
+                } else {
+                    strain = 0.02 + 0.025 * Math.pow((t - 0.7) / 0.3, 2);
+                }
+                
+                strain = Math.min(0.045, strain);
+                
+                let x = marginL + (t * graphW);
+                let y = h - marginB - (strain * graphH / 0.045);
+                y = Math.max(marginT, Math.min(h - marginB, y));
+                
+                if (isFirstPoint) {
+                    ctxCurve.moveTo(x, y);
+                    isFirstPoint = false;
+                } else {
+                    ctxCurve.lineTo(x, y);
+                }
+            }
+            ctxCurve.stroke();
+            ctxCurve.shadowBlur = 0;
+
+            if (progress >= 1.0) {
+                ctxCurve.fillStyle = '#ff3a3a';
+                ctxCurve.shadowBlur = 12;
+                ctxCurve.shadowColor = '#ff0000';
+                ctxCurve.beginPath();
+                
+                let t = 1.0;
+                let strain = 0.02 + 0.025 * Math.pow((1.0 - 0.7) / 0.3, 2);
+                strain = Math.min(0.045, strain);
+                let x = marginL + graphW;
+                let y = h - marginB - (strain * graphH / 0.045);
+                y = Math.max(marginT, Math.min(h - marginB, y));
+                
+                ctxCurve.arc(x, y, 6, 0, 2 * Math.PI);
+                ctxCurve.fill();
+                ctxCurve.shadowBlur = 0;
+            }
+
+            ctxCurve.fillStyle = '#ffdb9c';
+            ctxCurve.font = 'bold 11px "Microsoft YaHei"';
+            ctxCurve.shadowBlur = 6;
+            ctxCurve.shadowColor = '#ffa500';
+            
+            // 显示格式根据寿命大小调整
+            if (ruptureTime >= 1) {
+                ctxCurve.fillText(`断裂时间: ${ruptureTime.toFixed(2)} 小时`, marginL + graphW - 144, marginT - 4);
+            } else {
+                ctxCurve.fillText(`断裂时间: ${(ruptureTime * 60).toFixed(1)} 分钟`, marginL + graphW - 144, marginT - 4);
+            }
+            ctxCurve.shadowBlur = 0;
+        }
+
+        // 动画循环
+        function updateAnimation(now) {
+            if (!animActive) {
+                if (rafId) cancelAnimationFrame(rafId);
+                return;
+            }
+            if (!animStartTime) animStartTime = now;
+            const elapsed = (now - animStartTime) / 1000;
+            let progress = Math.min(elapsed / animDuration, 1.0);
+            animProgress = progress;
+
+            drawSpecimen(progress);
+            drawCurve(progress);
+
+            if (progress < 1.0) {
+                rafId = requestAnimationFrame(updateAnimation);
+            } else {
+                animActive = false;
+                rafId = null;
+            }
+        }
+
+        function startSim() {
+            if (animActive) {
+                cancelAnimationFrame(rafId);
+                animActive = false;
+            }
+            animProgress = 0.0;
+            animStartTime = null;
+            animActive = true;
+            drawSpecimen(0);
+            drawCurve(0);
+            rafId = requestAnimationFrame(updateAnimation);
+        }
+
+        function resetSim() {
+            if (animActive) {
+                cancelAnimationFrame(rafId);
+                animActive = false;
+            }
+            animProgress = 0.0;
+            drawSpecimen(0);
+            drawCurve(0);
+            barStatus.innerText = '(完整)';
+        }
+
+        // 滑块事件
+        tempSlider.addEventListener('input', function(e) {
+            currentTemp = parseInt(e.target.value);
+            refreshUI();
+            resetSim();
+            drawCurve(0);
+        });
+
+        startBtn.addEventListener('click', startSim);
+        resetBtn.addEventListener('click', resetSim);
+
+        // LM公式弹窗
+        formulaBtn.addEventListener('click', function() {
+            modal.style.display = 'flex';
+        });
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // 初始化
+        updateCards();
+        refreshUI();
+        resetSim();
+    })();
+</script>
+</body>
+</html>
